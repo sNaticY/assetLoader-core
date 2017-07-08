@@ -4,24 +4,74 @@ using UnityEngine;
 
 namespace Meow.AssetLoader.Core
 {
-    public class LoadOperation : CustomYieldInstruction
+    public abstract class LoadOperation : CustomYieldInstruction
     {
-        private AssetBundle _assetbundle;
-        private string _assetPath;
-        
-        public LoadOperation(string assetbundlePath, string assetPath)
+        protected AsyncOperation Request { get; private set; }
+
+        protected readonly string _assetbundlePath;
+
+        private readonly List<LoadBundleOperation> _dependenciesLoadOperation = new List<LoadBundleOperation>();
+
+        public bool IsDone { get; private set; }
+
+        protected LoadOperation(string assetbundlePath)
         {
-            
+            if (!MainLoader.Instance.LoadedBundles.ContainsKey(assetbundlePath))
+            {
+                _assetbundlePath = assetbundlePath;
+                var dependencies = MainLoader.Instance.Manifest.GetAllDependencies(_assetbundlePath);
+                foreach (var dependency in dependencies)
+                {
+                    LoadedBundle loadedBundle;
+                    if (MainLoader.Instance.LoadedBundles.TryGetValue(dependency, out loadedBundle))
+                    {
+                        loadedBundle.ReferecedCount++;
+                    }
+                    else
+                    {
+                        _dependenciesLoadOperation.Add(new LoadBundleOperation(dependency));
+                    }
+                }
+            }
+            else
+            {
+                IsDone = true;
+            }
         }
-        
-        public T GetAsset<T>() where T : UnityEngine.Object
-        {
-            return _assetbundle.LoadAsset<T>(_assetPath);
-        }
-        
+
+        protected abstract AsyncOperation AddLoadRequest();
+
+        protected abstract void LoadDoneMethod();
+
         public override bool keepWaiting
         {
-            get { throw new System.NotImplementedException(); }
+            get
+            {
+                if (Request == null)
+                {
+                    bool isAllDependenciesDone = true;
+                    foreach (var operation in _dependenciesLoadOperation)
+                    {
+                        if (!operation.IsDone)
+                        {
+                            isAllDependenciesDone = false;
+                        }
+                    }
+                    if (isAllDependenciesDone)
+                    {
+                        Request = AddLoadRequest();
+                    }
+                }
+                else
+                {
+                    IsDone = Request.isDone;
+                    if (Request.isDone)
+                    {
+                        LoadDoneMethod();
+                    }
+                }
+                return !IsDone;
+            }
         }
     }
 }
