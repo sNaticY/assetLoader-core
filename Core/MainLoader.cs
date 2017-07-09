@@ -1,5 +1,6 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
+using System.IO;
 using UnityEngine;
 
 namespace Meow.AssetLoader.Core
@@ -9,6 +10,8 @@ namespace Meow.AssetLoader.Core
         #region MonoSingletonImplement
 
         private static MainLoader _instance;
+
+        public static string AssetbundleRootPath;
 
         public static MainLoader Instance
         {
@@ -37,6 +40,14 @@ namespace Meow.AssetLoader.Core
         public static AssetBundleManifest Manifest;
         
         public static Dictionary<string, LoadedBundle> LoadedBundles = new Dictionary<string, LoadedBundle>();
+        
+        public static IEnumerator Initialize(string assetbundleRootPath, string manifeestName)
+        {
+            AssetbundleRootPath = assetbundleRootPath;
+            var manifestBundle = new LoadManifestOperation(Path.Combine(assetbundleRootPath, manifeestName));
+            yield return manifestBundle;
+            Manifest = manifestBundle.Manifest;
+        }
 
         public static LoadBundleOperation LoadBundle(string bundlePath)
         {
