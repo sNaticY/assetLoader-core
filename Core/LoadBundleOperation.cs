@@ -1,34 +1,76 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.SceneManagement;
 
 namespace Meow.AssetLoader.Core
 {
-    public class LoadBundleOperation : LoadOperation
+    public class LoadBundleOperation : CustomYieldInstruction
     {
-        private AssetBundleCreateRequest Request
+        private AssetBundleCreateRequest _request;
+
+        private LoadBundleOperation _currnetLoadingDependency;
+
+        private readonly string _assetbundlePath;
+
+        private readonly Queue<string> _pendingDependencies = new Queue<string>();
+
+        public bool IsDone { get; private set; }
+
+        public LoadBundleOperation(string assetbundlePath)
         {
-            get { return base.Request as AssetBundleCreateRequest; }
-        }
-        
-        public LoadBundleOperation(string assetbundlePath) : base(assetbundlePath)
-        {
+            if (!MainLoader.LoadedBundles.ContainsKey(assetbundlePath))
+            {
+                _assetbundlePath = assetbundlePath;
+                var dependencies = MainLoader.Manifest.GetAllDependencies(_assetbundlePath);
+                foreach (var dependency in dependencies)
+                {
+                    LoadedBundle loadedBundle;
+                    if (MainLoader.LoadedBundles.TryGetValue(dependency, out loadedBundle))
+                    {
+                        loadedBundle.ReferecedCount++;
+                    }
+                    else
+                    {
+                        _pendingDependencies.Enqueue(dependency);
+                    }
+                }
+            }
+            else
+            {
+                IsDone = true;
+            }
         }
 
-        public T GetAsset<T>(string assetPath) where T : UnityEngine.Object
+        public override bool keepWaiting
         {
-            return Request.assetBundle.LoadAsset<T>(assetPath);
-        }
+            get
+            {
+                if (_request == null)
+                {
+                    if (_currnetLoadingDependency == null || _currnetLoadingDependency.IsDone)
+                    {
+                        if (_pendingDependencies.Count > 0)
+                        {
+                            var denpendencyPath = _pendingDependencies.Dequeue();
+                            _currnetLoadingDependency = new LoadBundleOperation(denpendencyPath);
+                        }
+                        else
+                        {
+                            _request = AssetBundle.LoadFromFileAsync(_assetbundlePath);
+                        }
+                    }
+                }
 
-        protected override AsyncOperation AddLoadRequest()
-        {
-            return AssetBundle.LoadFromFileAsync(_assetbundlePath);
-        }
-
-        protected override void LoadDoneMethod()
-        {
-            MainLoader.Instance.LoadedBundles.Add(_assetbundlePath, new LoadedBundle(_assetbundlePath, Request.assetBundle));
+                if (_request != null)
+                {
+                    if (_request.isDone)
+                    {
+                        MainLoader.LoadedBundles.Add(_assetbundlePath, new LoadedBundle(_assetbundlePath, _request.assetBundle));
+                        IsDone = true;
+                    }
+                }
+                return !IsDone;
+            }
         }
     }
 }
