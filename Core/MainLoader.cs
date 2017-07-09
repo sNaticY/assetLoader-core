@@ -34,14 +34,18 @@ namespace Meow.AssetLoader.Core
 
         #endregion
 
-        // Use this for initialization
-        void Start()
+        public static AssetBundleManifest Manifest;
+        
+        public static Dictionary<string, LoadedBundle> LoadedBundles = new Dictionary<string, LoadedBundle>();
+
+        public static LoadBundleOperation LoadBundle(string bundlePath)
         {
+            return new LoadBundleOperation(bundlePath);
         }
 
-        // Update is called once per frame
-        void Update()
+        public static LoadLevelOperation LoadLevel(string bundlePath, string levelName, bool isAddtive)
         {
+            return new LoadLevelOperation(bundlePath, levelName, isAddtive);
         }
     }
 }
