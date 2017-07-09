@@ -18,6 +18,7 @@ namespace Meow.AssetLoader.Core
             _levelName = levelName;
             _isAddtive = isAdditive;
             _loadBundleOperation = new LoadBundleOperation(assetbundlePath);
+            MainLoader.Instance.StartCoroutine(_loadBundleOperation);
             IsDone = false;
         }
 
