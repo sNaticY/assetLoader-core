@@ -1,27 +1,29 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
+using System.IO;
 using UnityEngine;
 
 namespace Meow.AssetLoader.Core
 {
     public class LoadBundleOperation : CustomYieldInstruction
     {
-        private AssetBundleCreateRequest _request;
+        private WWW _www;
 
         private LoadBundleOperation _currnetLoadingDependency;
 
-        private readonly string _assetbundlePath;
+        private readonly string _assetbundleName;
 
         private readonly Queue<string> _pendingDependencies = new Queue<string>();
 
         public bool IsDone { get; private set; }
 
-        public LoadBundleOperation(string assetbundlePath)
+        public LoadBundleOperation(string assetbundleName)
         {
-            if (!MainLoader.LoadedBundles.ContainsKey(assetbundlePath))
+            if (!MainLoader.LoadedBundles.ContainsKey(assetbundleName))
             {
-                _assetbundlePath = assetbundlePath;
-                var dependencies = MainLoader.Manifest.GetAllDependencies(_assetbundlePath);
+                IsDone = false;
+                _assetbundleName = assetbundleName;
+                var dependencies = MainLoader.Manifest.GetAllDependencies(_assetbundleName);
                 foreach (var dependency in dependencies)
                 {
                     LoadedBundle loadedBundle;
@@ -41,11 +43,21 @@ namespace Meow.AssetLoader.Core
             }
         }
 
+        public T GetAsset<T>(string assetPath) where T : UnityEngine.Object
+        {
+            return _www.assetBundle.LoadAsset<T>(assetPath);
+        }
+
         public override bool keepWaiting
         {
             get
             {
-                if (_request == null)
+                if (IsDone)
+                {
+                    return false;
+                }
+
+                if (_www == null)
                 {
                     if (_currnetLoadingDependency == null || _currnetLoadingDependency.IsDone)
                     {
@@ -53,19 +65,20 @@ namespace Meow.AssetLoader.Core
                         {
                             var denpendencyPath = _pendingDependencies.Dequeue();
                             _currnetLoadingDependency = new LoadBundleOperation(denpendencyPath);
+                            MainLoader.Instance.StartCoroutine(_currnetLoadingDependency);
                         }
                         else
                         {
-                            _request = AssetBundle.LoadFromFileAsync(_assetbundlePath);
+                            _www = new WWW(Path.Combine(MainLoader.AssetbundleRootPath, _assetbundleName));
                         }
                     }
                 }
 
-                if (_request != null)
+                if (_www != null)
                 {
-                    if (_request.isDone)
+                    if (_www.isDone)
                     {
-                        MainLoader.LoadedBundles.Add(_assetbundlePath, new LoadedBundle(_assetbundlePath, _request.assetBundle));
+                        MainLoader.LoadedBundles.Add(_assetbundleName, new LoadedBundle(_assetbundleName, _www.assetBundle));
                         IsDone = true;
                     }
                 }
