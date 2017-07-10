@@ -19,32 +19,47 @@ namespace Meow.AssetLoader.Core
 
         public LoadBundleOperation(string assetbundleName)
         {
-            if (!MainLoader.LoadedBundles.ContainsKey(assetbundleName))
-            {
-                IsDone = false;
-                _assetbundleName = assetbundleName;
-                var dependencies = MainLoader.Manifest.GetAllDependencies(_assetbundleName);
-                foreach (var dependency in dependencies)
-                {
-                    LoadedBundle loadedBundle;
-                    if (MainLoader.LoadedBundles.TryGetValue(dependency, out loadedBundle))
-                    {
-                        loadedBundle.ReferecedCount++;
-                    }
-                    else
-                    {
-                        _pendingDependencies.Enqueue(dependency);
-                    }
-                }
-            }
-            else
+#if UNITY_EDITOR
+            if (MainLoader.SimulateAssetBundleInEditor)
             {
                 IsDone = true;
+            }
+            else
+#endif
+            {
+                if (!MainLoader.LoadedBundles.ContainsKey(assetbundleName))
+                {
+                    IsDone = false;
+                    _assetbundleName = assetbundleName;
+                    var dependencies = MainLoader.Manifest.GetAllDependencies(_assetbundleName);
+                    foreach (var dependency in dependencies)
+                    {
+                        LoadedBundle loadedBundle;
+                        if (MainLoader.LoadedBundles.TryGetValue(dependency, out loadedBundle))
+                        {
+                            loadedBundle.ReferecedCount++;
+                        }
+                        else
+                        {
+                            _pendingDependencies.Enqueue(dependency);
+                        }
+                    }
+                }
+                else
+                {
+                    IsDone = true;
+                }
             }
         }
 
         public T GetAsset<T>(string assetPath) where T : UnityEngine.Object
         {
+#if UNITY_EDITOR
+            if (MainLoader.SimulateAssetBundleInEditor)
+            {
+                return UnityEditor.AssetDatabase.LoadAssetAtPath<T>(assetPath);
+            }
+#endif
             return _www.assetBundle.LoadAsset<T>(assetPath);
         }
 
