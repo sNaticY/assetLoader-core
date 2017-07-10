@@ -39,7 +39,32 @@ namespace Meow.AssetLoader.Core
 
         public static AssetBundleManifest Manifest;
         
-        public static Dictionary<string, LoadedBundle> LoadedBundles = new Dictionary<string, LoadedBundle>();
+        public static readonly Dictionary<string, LoadedBundle> LoadedBundles = new Dictionary<string, LoadedBundle>();
+        
+        
+#if UNITY_EDITOR
+        static int m_SimulateAssetBundleInEditor = -1;
+        
+        public static bool SimulateAssetBundleInEditor
+        {
+            get
+            {
+                if (m_SimulateAssetBundleInEditor == -1)
+                    m_SimulateAssetBundleInEditor = UnityEditor.EditorPrefs.GetBool("SimulateAssetBundles", true) ? 1 : 0;
+
+                return m_SimulateAssetBundleInEditor != 0;
+            }
+            set
+            {
+                int newValue = value ? 1 : 0;
+                if (newValue != m_SimulateAssetBundleInEditor)
+                {
+                    m_SimulateAssetBundleInEditor = newValue;
+                    UnityEditor.EditorPrefs.SetBool("SimulateAssetBundles", value);
+                }
+            }
+        }
+#endif
         
         public static IEnumerator Initialize(string assetbundleRootPath, string manifeestName)
         {
