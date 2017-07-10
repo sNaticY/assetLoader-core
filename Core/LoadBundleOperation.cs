@@ -20,7 +20,7 @@ namespace Meow.AssetLoader.Core
         public LoadBundleOperation(string assetbundleName)
         {
 #if UNITY_EDITOR
-            if (MainLoader.SimulateAssetBundleInEditor)
+            if (MainLoader.IsSimulationMode)
             {
                 IsDone = true;
             }
@@ -55,7 +55,7 @@ namespace Meow.AssetLoader.Core
         public T GetAsset<T>(string assetPath) where T : UnityEngine.Object
         {
 #if UNITY_EDITOR
-            if (MainLoader.SimulateAssetBundleInEditor)
+            if (MainLoader.IsSimulationMode)
             {
                 return UnityEditor.AssetDatabase.LoadAssetAtPath<T>(assetPath);
             }

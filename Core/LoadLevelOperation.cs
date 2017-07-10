@@ -31,7 +31,7 @@ namespace Meow.AssetLoader.Core
                     if (_loadLevelOperation == null)
                     {
 #if UNITY_EDITOR
-                        if (MainLoader.SimulateAssetBundleInEditor)
+                        if (MainLoader.IsSimulationMode)
                         {
                             if (_isAddtive)
                             {

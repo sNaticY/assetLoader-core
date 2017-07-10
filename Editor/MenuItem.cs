@@ -11,13 +11,13 @@ namespace Meow.AssetLoader.Editor
 		[MenuItem("Window/Meow Asset Loader/Simulation Mode")]
 		public static void ToggleSimulationMode ()
 		{
-			MainLoader.SimulateAssetBundleInEditor = !MainLoader.SimulateAssetBundleInEditor;
+			MainLoader.IsSimulationMode = !MainLoader.IsSimulationMode;
 		}
 	
 		[MenuItem("Window/Meow Asset Loader/Simulation Mode", true)]
 		public static bool ToggleSimulationModeValidate ()
 		{
-			Menu.SetChecked("Window/Meow Asset Loader/Simulation Mode", MainLoader.SimulateAssetBundleInEditor);
+			Menu.SetChecked("Window/Meow Asset Loader/Simulation Mode", MainLoader.IsSimulationMode);
 			return true;
 		}
 	}

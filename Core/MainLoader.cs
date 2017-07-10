@@ -43,24 +43,24 @@ namespace Meow.AssetLoader.Core
         
         
 #if UNITY_EDITOR
-        static int m_SimulateAssetBundleInEditor = -1;
+        static int _isSimulationMode = -1;
         
-        public static bool SimulateAssetBundleInEditor
+        public static bool IsSimulationMode
         {
             get
             {
-                if (m_SimulateAssetBundleInEditor == -1)
-                    m_SimulateAssetBundleInEditor = UnityEditor.EditorPrefs.GetBool("SimulateAssetBundles", true) ? 1 : 0;
+                if (_isSimulationMode == -1)
+                    _isSimulationMode = UnityEditor.EditorPrefs.GetBool("AssetLoaderSimulationMode", true) ? 1 : 0;
 
-                return m_SimulateAssetBundleInEditor != 0;
+                return _isSimulationMode != 0;
             }
             set
             {
                 int newValue = value ? 1 : 0;
-                if (newValue != m_SimulateAssetBundleInEditor)
+                if (newValue != _isSimulationMode)
                 {
-                    m_SimulateAssetBundleInEditor = newValue;
-                    UnityEditor.EditorPrefs.SetBool("SimulateAssetBundles", value);
+                    _isSimulationMode = newValue;
+                    UnityEditor.EditorPrefs.SetBool("AssetLoaderSimulationMode", value);
                 }
             }
         }
@@ -68,10 +68,15 @@ namespace Meow.AssetLoader.Core
         
         public static IEnumerator Initialize(string assetbundleRootPath, string manifeestName)
         {
-            AssetbundleRootPath = assetbundleRootPath;
-            var manifestBundle = new LoadManifestOperation(Path.Combine(assetbundleRootPath, manifeestName));
-            yield return manifestBundle;
-            Manifest = manifestBundle.Manifest;
+#if UNITY_EDITOR
+            if (!IsSimulationMode)
+            {
+#endif
+                AssetbundleRootPath = assetbundleRootPath;
+                var manifestBundle = new LoadManifestOperation(Path.Combine(assetbundleRootPath, manifeestName));
+                yield return manifestBundle;
+                Manifest = manifestBundle.Manifest;
+            }
         }
 
         public static LoadBundleOperation LoadBundle(string bundlePath)
