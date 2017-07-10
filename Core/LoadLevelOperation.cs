@@ -7,12 +7,12 @@ namespace Meow.AssetLoader.Core
     {
         private LoadBundleOperation _loadBundleOperation;
         private AsyncOperation _loadLevelOperation;
-        
+
         private readonly string _levelName;
         private readonly bool _isAddtive;
 
         public bool IsDone { get; private set; }
-        
+
         public LoadLevelOperation(string assetbundlePath, string levelName, bool isAdditive)
         {
             _levelName = levelName;
@@ -30,7 +30,24 @@ namespace Meow.AssetLoader.Core
                 {
                     if (_loadLevelOperation == null)
                     {
-                        _loadLevelOperation = SceneManager.LoadSceneAsync(_levelName, _isAddtive ? LoadSceneMode.Additive : LoadSceneMode.Single);
+#if UNITY_EDITOR
+                        if (MainLoader.SimulateAssetBundleInEditor)
+                        {
+                            if (_isAddtive)
+                            {
+                                _loadLevelOperation = UnityEditor.EditorApplication.LoadLevelAdditiveAsyncInPlayMode(_levelName);
+                            }
+                            else
+                            {
+                                _loadLevelOperation = UnityEditor.EditorApplication.LoadLevelAsyncInPlayMode(_levelName);
+                            }
+                        }
+                        else
+#endif
+                        {
+                            _loadLevelOperation =
+                                SceneManager.LoadSceneAsync(_levelName, _isAddtive ? LoadSceneMode.Additive : LoadSceneMode.Single);
+                        }
                     }
                     if (_loadLevelOperation.isDone)
                     {
