@@ -19,6 +19,8 @@ namespace Meow.AssetLoader.Core
 
         public LoadBundleOperation(string assetbundleName)
         {
+            _assetbundleName = assetbundleName;
+            
 #if UNITY_EDITOR
             if (MainLoader.IsSimulationMode)
             {
@@ -30,7 +32,6 @@ namespace Meow.AssetLoader.Core
                 if (!MainLoader.LoadedBundles.ContainsKey(assetbundleName))
                 {
                     IsDone = false;
-                    _assetbundleName = assetbundleName;
                     var dependencies = MainLoader.Manifest.GetAllDependencies(_assetbundleName);
                     foreach (var dependency in dependencies)
                     {
@@ -61,6 +62,32 @@ namespace Meow.AssetLoader.Core
             }
 #endif
             return _www.assetBundle.LoadAsset<T>(assetPath);
+        }
+
+        public Dictionary<string, T> GetAllAssets<T>() where T : UnityEngine.Object
+        {
+            Dictionary<string, T> result = new Dictionary<string, T>();
+#if UNITY_EDITOR
+            if (MainLoader.IsSimulationMode)
+            {
+                var assetPaths = UnityEditor.AssetDatabase.GetAssetPathsFromAssetBundle(_assetbundleName);
+                foreach (var path in assetPaths)
+                {
+                    T asset = UnityEditor.AssetDatabase.LoadAssetAtPath<T>(path);
+                    result.Add(path, asset);
+                }
+            }
+            else
+#endif
+            {
+                var assetPaths = _www.assetBundle.GetAllAssetNames();
+                foreach (var path in assetPaths)
+                {
+                    T asset = _www.assetBundle.LoadAsset<T>(path);
+                    result.Add(path, asset);
+                }
+            }
+            return result;
         }
 
         public override bool keepWaiting
