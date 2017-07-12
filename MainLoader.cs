@@ -8,43 +8,15 @@ namespace Meow.AssetLoader
 {
     public class MainLoader : MonoBehaviour
     {
-        #region MonoSingletonImplement
+        public string AssetbundleRootPath;
 
-        private static MainLoader _instance;
-
-        public static string AssetbundleRootPath;
-
-        public static MainLoader Instance
-        {
-            get
-            {
-                if (_instance == null)
-                {
-                    var go = GameObject.Find("MainLoader");
-                    if (go == null)
-                    {
-                        go = new GameObject("MainLoader");
-                    }
-                    _instance = go.GetComponent<MainLoader>();
-                    if (_instance == null)
-                    {
-                        _instance = go.AddComponent<MainLoader>();
-                        DontDestroyOnLoad(go);
-                    }
-                }
-                return _instance;
-            }
-        }
-
-        #endregion
-
-        public static AssetBundleManifest Manifest;
+        public AssetBundleManifest Manifest;
         
-        public static readonly Dictionary<string, LoadedBundle> LoadedBundles = new Dictionary<string, LoadedBundle>();
+        public readonly Dictionary<string, LoadedBundle> LoadedBundles = new Dictionary<string, LoadedBundle>();
         
         
 #if UNITY_EDITOR
-        static int _isSimulationMode = -1;
+        private static int _isSimulationMode = -1;
         
         public static bool IsSimulationMode
         {
@@ -67,12 +39,12 @@ namespace Meow.AssetLoader
         }
 #endif
         
-        public static IEnumerator Initialize(string assetbundleRootPath, string manifeestName)
+        public IEnumerator Initialize(string assetbundleRootPath, string manifeestName)
         {
 #if UNITY_EDITOR
             if (!IsSimulationMode)
-            {
 #endif
+            {
                 AssetbundleRootPath = assetbundleRootPath;
                 var manifestBundle = new LoadManifestOperation(Path.Combine(assetbundleRootPath, manifeestName));
                 yield return manifestBundle;
@@ -80,14 +52,14 @@ namespace Meow.AssetLoader
             }
         }
 
-        public static LoadBundleOperation LoadBundle(string bundlePath)
+        public LoadBundleOperation LoadBundle(string bundlePath)
         {
-            return new LoadBundleOperation(bundlePath);
+            return new LoadBundleOperation(this, bundlePath);
         }
 
-        public static LoadLevelOperation LoadLevel(string bundlePath, string levelName, bool isAddtive)
+        public LoadLevelOperation LoadLevel(string bundlePath, string levelName, bool isAddtive)
         {
-            return new LoadLevelOperation(bundlePath, levelName, isAddtive);
+            return new LoadLevelOperation(this, bundlePath, levelName, isAddtive);
         }
     }
 }

@@ -8,17 +8,19 @@ namespace Meow.AssetLoader.Core
         private LoadBundleOperation _loadBundleOperation;
         private AsyncOperation _loadLevelOperation;
 
+        private MainLoader _loader;
         private readonly string _levelName;
         private readonly bool _isAddtive;
 
         public bool IsDone { get; private set; }
 
-        public LoadLevelOperation(string assetbundlePath, string levelName, bool isAdditive)
+        public LoadLevelOperation(MainLoader loader, string assetbundlePath, string levelName, bool isAdditive)
         {
+            _loader = loader;
             _levelName = levelName;
             _isAddtive = isAdditive;
-            _loadBundleOperation = new LoadBundleOperation(assetbundlePath);
-            MainLoader.Instance.StartCoroutine(_loadBundleOperation);
+            _loadBundleOperation = new LoadBundleOperation(_loader, assetbundlePath);
+            _loader.StartCoroutine(_loadBundleOperation);
             IsDone = false;
         }
 

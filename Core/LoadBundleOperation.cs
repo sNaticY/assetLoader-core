@@ -13,12 +13,15 @@ namespace Meow.AssetLoader.Core
 
         private readonly string _assetbundleName;
 
+        private readonly MainLoader _loader;
+
         private readonly Queue<string> _pendingDependencies = new Queue<string>();
 
         public bool IsDone { get; private set; }
 
-        public LoadBundleOperation(string assetbundleName)
+        public LoadBundleOperation(MainLoader loader, string assetbundleName)
         {
+            _loader = loader;
             _assetbundleName = assetbundleName;
             
 #if UNITY_EDITOR
@@ -29,14 +32,14 @@ namespace Meow.AssetLoader.Core
             else
 #endif
             {
-                if (!MainLoader.LoadedBundles.ContainsKey(assetbundleName))
+                if (!_loader.LoadedBundles.ContainsKey(assetbundleName))
                 {
                     IsDone = false;
-                    var dependencies = MainLoader.Manifest.GetAllDependencies(_assetbundleName);
+                    var dependencies = _loader.Manifest.GetAllDependencies(_assetbundleName);
                     foreach (var dependency in dependencies)
                     {
                         LoadedBundle loadedBundle;
-                        if (MainLoader.LoadedBundles.TryGetValue(dependency, out loadedBundle))
+                        if (_loader.LoadedBundles.TryGetValue(dependency, out loadedBundle))
                         {
                             loadedBundle.ReferecedCount++;
                         }
@@ -106,12 +109,12 @@ namespace Meow.AssetLoader.Core
                         if (_pendingDependencies.Count > 0)
                         {
                             var denpendencyPath = _pendingDependencies.Dequeue();
-                            _currnetLoadingDependency = new LoadBundleOperation(denpendencyPath);
-                            MainLoader.Instance.StartCoroutine(_currnetLoadingDependency);
+                            _currnetLoadingDependency = new LoadBundleOperation(_loader, denpendencyPath);
+                            _loader.StartCoroutine(_currnetLoadingDependency);
                         }
                         else
                         {
-                            _www = new WWW(Path.Combine(MainLoader.AssetbundleRootPath, _assetbundleName));
+                            _www = new WWW(Path.Combine(_loader.AssetbundleRootPath, _assetbundleName));
                         }
                     }
                 }
@@ -120,7 +123,7 @@ namespace Meow.AssetLoader.Core
                 {
                     if (_www.isDone)
                     {
-                        MainLoader.LoadedBundles.Add(_assetbundleName, new LoadedBundle(_assetbundleName, _www.assetBundle));
+                        _loader.LoadedBundles.Add(_assetbundleName, new LoadedBundle(_assetbundleName, _www.assetBundle));
                         IsDone = true;
                     }
                 }
