@@ -77,7 +77,7 @@ namespace Meow.AssetLoader.Core
                 foreach (var path in assetPaths)
                 {
                     T asset = UnityEditor.AssetDatabase.LoadAssetAtPath<T>(path);
-                    result.Add(path, asset);
+                    result.Add(path.ToLower(), asset);
                 }
             }
             else
